@@ -1,0 +1,17 @@
+{
+  "name": "base-dashboard",
+  "version": "1.0.0",
+  "description": "Dashboard for Base.vn - Theo dõi công việc",
+  "main": "sync.js",
+  "scripts": {
+    "sync": "node sync.js",
+    "start": "npm run sync && echo 'Data synced to ./data/requests.json'"
+  },
+  "keywords": ["base", "dashboard", "sync"],
+  "author": "Bokemcom-lab",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1"
+  }
+}
