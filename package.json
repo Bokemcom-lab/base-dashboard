@@ -5,7 +5,9 @@
   "main": "sync.js",
   "scripts": {
     "sync": "node sync.js",
-    "start": "npm run sync && echo 'Data synced to ./data/requests.json'"
+    "convert": "node convert-csv.js",
+    "start": "npm run sync && echo 'Data synced to ./data/requests.json'",
+    "import-csv": "npm run convert && echo 'CSV imported to ./data/requests.json'"
   },
   "keywords": ["base", "dashboard", "sync"],
   "author": "Bokemcom-lab",

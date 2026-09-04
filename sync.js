@@ -57,38 +57,71 @@ function validateConfig() {
 /**
  * Fetch data from Base.vn API
  *
- * Note: Base.vn API structure might vary. This script uses a common pattern.
- * If API response format is different, adjust parsing accordingly.
+ * Note: Base.vn API structure may vary. If API fails, see SETUP_MANUAL_EXPORT.md.
  */
 async function fetchBaseData() {
-  try {
-    console.log('\n🔄 Fetching data from Base.vn...');
+  console.log('\n🔄 Attempting to fetch data from Base.vn API...');
 
-    // Base.vn API endpoint (adjust if needed)
-    const apiUrl = `https://api.base.vn/v1/base/${BASE_ID}/table/${encodeURIComponent(TABLE_NAME)}/records`;
-
-    const response = await axios.get(apiUrl, {
-      headers: {
-        'Authorization': `Bearer ${API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      timeout: 30000
-    });
-
-    console.log(`✓ API Response received (${response.data.length || response.data.records?.length || 'unknown'} records)`);
-    return response.data;
-
-  } catch (error) {
-    if (error.response) {
-      console.error(`❌ API Error ${error.response.status}: ${error.response.statusText}`);
-      console.error('Response:', JSON.stringify(error.response.data, null, 2));
-    } else if (error.code === 'ECONNREFUSED') {
-      console.error('❌ Cannot connect to Base.vn API. Check internet connection.');
-    } else {
-      console.error('❌ Network error:', error.message);
+  // Try multiple API endpoints in case Base.vn structure differs
+  const endpoints = [
+    // Primary: Standard structure
+    {
+      name: 'Primary endpoint',
+      url: `https://api.base.vn/v1/base/${BASE_ID}/table/${encodeURIComponent(TABLE_NAME)}/records`
+    },
+    // Alternative 1: Different path structure
+    {
+      name: 'Alternative endpoint 1',
+      url: `https://api.base.vn/v1/base/${BASE_ID}`
+    },
+    // Alternative 2: Simplified path
+    {
+      name: 'Alternative endpoint 2',
+      url: `https://api.base.vn/v1/${BASE_ID}`
     }
-    throw error;
+  ];
+
+  for (const endpoint of endpoints) {
+    try {
+      console.log(`  Trying ${endpoint.name}...`);
+
+      const response = await axios.get(endpoint.url, {
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000,
+        validateStatus: () => true // Accept all status codes
+      });
+
+      // Check if response is valid JSON with data
+      if (response.status === 200 && response.data && (
+        Array.isArray(response.data) ||
+        response.data.records ||
+        response.data.data
+      )) {
+        console.log(`  ✓ Success on: ${endpoint.name}`);
+        const recordCount = response.data.length ||
+                          response.data.records?.length ||
+                          response.data.data?.length || 0;
+        console.log(`  ✓ Records fetched: ${recordCount}`);
+        return response.data;
+      }
+
+    } catch (error) {
+      // Try next endpoint
+      continue;
+    }
   }
+
+  // If all API attempts fail, guide user
+  console.error('\n⚠️ All Base.vn API endpoints failed.');
+  console.error('   Possible causes:');
+  console.error('   1. Base ID format incorrect (got: ' + BASE_ID + ')');
+  console.error('   2. API key invalid or expired');
+  console.error('   3. Base.vn API structure is different');
+  console.error('\n📖 For manual data import: See SETUP_MANUAL_EXPORT.md\n');
+  throw new Error('Could not fetch data from Base.vn API');
 }
 
 /**
